@@ -19,7 +19,7 @@ export default async function NextExpiryNotice() {
     .select('expiry_date, foods(name)')
     .eq('status', 'AVAILABLE')
     .neq('expiry_date', null)
-    .order('expiry_date', { ascending: true, nullsLast: true })
+    .order('expiry_date', { ascending: true })
     .limit(1)
 
   const upcoming = (data ?? [])[0] as LotWithFood | undefined
