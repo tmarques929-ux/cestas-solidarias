@@ -15,17 +15,19 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="pt-BR">
-      <body className="flex h-screen overflow-hidden">
-        {/* Sidebar for desktop and collapsible on mobile */}
-        <Sidebar />
-        <div className="flex flex-col flex-1 w-0">
-          <Topbar />
-          <main className="flex-1 overflow-y-auto p-4 bg-gray-100 space-y-4">
-            {/* banner fixo com avisos */}
-            <ExpiryBanner />
-            {children}
-          </main>
+    <html lang="pt-BR" className="h-full">
+      <body className="min-h-screen bg-gray-100 text-gray-900">
+        <div className="flex min-h-screen flex-col md:flex-row">
+          {/* Sidebar fixa no desktop e sobreposta no mobile */}
+          <Sidebar />
+          <div className="flex min-h-screen flex-1 flex-col">
+            <Topbar />
+            <main className="flex-1 space-y-4 bg-gray-100 px-4 py-4 sm:px-6">
+              {/* banner fixo com avisos */}
+              <ExpiryBanner />
+              {children}
+            </main>
+          </div>
         </div>
       </body>
     </html>

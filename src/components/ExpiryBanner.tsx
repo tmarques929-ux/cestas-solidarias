@@ -46,8 +46,8 @@ export default async function ExpiryBanner() {
       .join(', ')
 
   return (
-    <div className="sticky top-0 z-40 mb-4 rounded-lg border-2 border-red-600 bg-red-100 p-4 shadow-lg">
-      <p className="text-2xl font-bold text-red-800">ATENÇÃO: itens críticos no estoque!</p>
+    <div className="mb-4 rounded-lg border-2 border-red-600 bg-red-100 p-4 text-sm shadow-lg md:sticky md:top-0 md:text-base">
+      <p className="text-lg font-bold text-red-800 sm:text-2xl">ATENCAO: itens criticos no estoque!</p>
       {expired.length > 0 && (
         <p className="mt-2 text-red-700">
           {expired.length} lote(s) vencidos: <strong>{listNames(expired)}</strong>
@@ -55,11 +55,11 @@ export default async function ExpiryBanner() {
       )}
       {expiring.length > 0 && (
         <p className="mt-1 text-yellow-800">
-          {expiring.length} lote(s) vencendo em até 7 dias:{' '}
+          {expiring.length} lote(s) vencendo em ate 7 dias:{' '}
           <strong>{listNames(expiring)}</strong>
         </p>
       )}
-      <p className="mt-2 text-sm text-red-900">
+      <p className="mt-2 text-xs text-red-900 sm:text-sm">
         Regularize imediatamente para evitar perdas e atualizar o estoque.
       </p>
     </div>

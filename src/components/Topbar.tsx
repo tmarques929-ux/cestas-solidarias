@@ -24,13 +24,16 @@ export default function Topbar() {
   }
 
   return (
-    <header className="flex items-center justify-between px-4 py-2 bg-white border-b shadow-sm">
-      <h1 className="text-lg font-semibold">Bem-vindo(a)</h1>
-      <div className="flex items-center gap-3">
-        {userEmail && <span className="text-sm text-gray-600">{userEmail}</span>}
+    <header className="flex flex-col gap-2 border-b bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 className="text-base font-semibold text-gray-900 sm:text-lg">Bem vindo(a)</h1>
+        <p className="text-xs text-gray-500 sm:hidden">Gerencie as cestas sem precisar de um computador.</p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 sm:justify-end">
+        {userEmail && <span className="truncate text-right">{userEmail}</span>}
         <button
           onClick={signOut}
-          className="px-3 py-1 text-sm text-white bg-primary rounded-md hover:bg-primary-dark"
+          className="w-full rounded-md bg-primary px-3 py-2 text-center text-white transition hover:bg-primary-dark sm:w-auto"
         >
           Sair
         </button>
