@@ -18,7 +18,7 @@ export default async function NextExpiryNotice() {
     .from('lots')
     .select('expiry_date, foods(name)')
     .eq('status', 'AVAILABLE')
-    .neq('expiry_date', null)
+    .not('expiry_date', 'is', null)
     .order('expiry_date', { ascending: true })
     .limit(1)
 
