@@ -46,21 +46,27 @@ export default async function ExpiryBanner() {
       .join(', ')
 
   return (
-    <div className="mb-4 rounded-lg border-2 border-red-600 bg-red-100 p-4 text-sm shadow-lg md:sticky md:top-0 md:text-base">
-      <p className="text-lg font-bold text-red-800 sm:text-2xl">ATENCAO: itens criticos no estoque!</p>
+    <div className="rounded-3xl border border-red-200 bg-white/90 p-4 text-sm text-slate-800 shadow-soft backdrop-blur md:sticky md:top-0 md:text-base">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-red-600">
+          Atencao
+        </span>
+        <p className="text-base font-semibold sm:text-xl">Itens criticos precisam de acao imediata.</p>
+      </div>
       {expired.length > 0 && (
-        <p className="mt-2 text-red-700">
-          {expired.length} lote(s) vencidos: <strong>{listNames(expired)}</strong>
+        <p className="mt-3 text-red-600">
+          <strong>{expired.length}</strong> lote(s) vencidos:{' '}
+          <span className="font-medium">{listNames(expired)}</span>
         </p>
       )}
       {expiring.length > 0 && (
-        <p className="mt-1 text-yellow-800">
-          {expiring.length} lote(s) vencendo em ate 7 dias:{' '}
-          <strong>{listNames(expiring)}</strong>
+        <p className="mt-1 text-amber-600">
+          <strong>{expiring.length}</strong> lote(s) vencendo em ate 7 dias:{' '}
+          <span className="font-medium">{listNames(expiring)}</span>
         </p>
       )}
-      <p className="mt-2 text-xs text-red-900 sm:text-sm">
-        Regularize imediatamente para evitar perdas e atualizar o estoque.
+      <p className="mt-3 text-xs text-slate-500 sm:text-sm">
+        Regularize imediatamente para evitar perdas e atualizar o estoque em Supabase.
       </p>
     </div>
   )

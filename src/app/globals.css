@@ -4,5 +4,9 @@
 
 /* Custom global styles can go here */
 body {
-  @apply bg-gray-100 text-gray-900;
+  @apply min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 text-slate-900 antialiased;
+}
+
+::selection {
+  @apply bg-primary/20 text-primary-dark;
 }

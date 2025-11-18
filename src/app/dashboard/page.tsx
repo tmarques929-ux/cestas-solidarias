@@ -1,6 +1,13 @@
+import Link from 'next/link'
 import { createServerSupabase } from '../../lib/supabaseServer'
 import { unstable_noStore as noStore } from 'next/cache'
 import type { Donation } from '../../types'
+import {
+  CubeIcon,
+  GiftIcon,
+  ExclamationTriangleIcon,
+  ClockIcon,
+} from '@heroicons/react/24/outline'
 
 type QuantityOnlyLot = { quantity: number }
 type ExpiringLot = { expiry_date: string; quantity: number }
@@ -12,13 +19,14 @@ type LotWithFood = {
 }
 type RecentDonation = Pick<Donation, 'id' | 'donor_name' | 'donated_at'>
 
+const numberFormatter = new Intl.NumberFormat('pt-BR')
+
 export const dynamic = 'force-dynamic'
 
 async function getDashboardMetrics() {
-  noStore() // disable caching for dynamic metrics
+  noStore()
   const supabase = createServerSupabase()
 
-  // Total items in stock (available lots)
   const { data: availableLots } = await supabase
     .from('lots')
     .select('quantity')
@@ -29,7 +37,6 @@ async function getDashboardMetrics() {
     0
   )
 
-  // Cestas montadas no mês
   const now = new Date()
   const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
   const { data: basketThisMonth } = await supabase
@@ -38,7 +45,6 @@ async function getDashboardMetrics() {
     .gte('created_at', firstDay)
   const totalBaskets = basketThisMonth?.length ?? 0
 
-  // Items vencidos/vencendo
   const today = new Date().toISOString().split('T')[0]
   const in7days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     .toISOString()
@@ -57,7 +63,6 @@ async function getDashboardMetrics() {
     else if (expiry <= in7days) expiring += Number(lot.quantity)
   })
 
-  // Últimas doações
   const { data: donationsData } = await supabase
     .from('donations')
     .select('id, donor_name, donated_at')
@@ -65,13 +70,14 @@ async function getDashboardMetrics() {
     .limit(5)
   const donations = (donationsData ?? []) as RecentDonation[]
 
-  // Top 5 alimentos mais críticos (low stock or soon to expire)
-  // We'll compute by grouping available lots by food_id and ordering by quantity ascending
   const { data: lotsByFood } = await supabase
     .from('lots')
     .select('food_id, quantity, expiry_date, foods(name)')
     .eq('status', 'AVAILABLE')
-  const foodMap: Record<number, { name: string; total: number; nearestExpiry: string | null }> = {}
+  const foodMap: Record<
+    number,
+    { name: string; total: number; nearestExpiry: string | null }
+  > = {}
   const lotsWithFood = (lotsByFood ?? []) as LotWithFood[]
   lotsWithFood.forEach((lot) => {
     const fid = lot.food_id
@@ -80,7 +86,10 @@ async function getDashboardMetrics() {
       foodMap[fid] = { name, total: 0, nearestExpiry: lot.expiry_date }
     }
     foodMap[fid].total += Number(lot.quantity)
-    if (lot.expiry_date && (!foodMap[fid].nearestExpiry || lot.expiry_date < foodMap[fid].nearestExpiry!)) {
+    if (
+      lot.expiry_date &&
+      (!foodMap[fid].nearestExpiry || lot.expiry_date < foodMap[fid].nearestExpiry!)
+    ) {
       foodMap[fid].nearestExpiry = lot.expiry_date
     }
   })
@@ -91,59 +100,159 @@ async function getDashboardMetrics() {
   return { totalItems, totalBaskets, expired, expiring, donations, criticalFoods }
 }
 
+const formatDate = (date: string) =>
+  new Date(date).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+  })
+
 export default async function DashboardPage() {
   const { totalItems, totalBaskets, expired, expiring, donations, criticalFoods } =
     await getDashboardMetrics()
 
+  const highlightCards = [
+    {
+      title: 'Itens em estoque',
+      value: numberFormatter.format(totalItems),
+      description: 'Disponiveis para montar cestas',
+      icon: CubeIcon,
+      gradient: 'from-primary to-secondary',
+    },
+    {
+      title: 'Cestas neste mes',
+      value: numberFormatter.format(totalBaskets),
+      description: 'Lotes concluidos desde o dia 1',
+      icon: GiftIcon,
+      gradient: 'from-secondary to-primary',
+    },
+    {
+      title: 'Itens vencidos',
+      value: numberFormatter.format(expired),
+      description: 'Necessitam descarte imediato',
+      icon: ExclamationTriangleIcon,
+      gradient: 'from-rose-500 to-orange-400',
+    },
+    {
+      title: 'Vencendo em 7 dias',
+      value: numberFormatter.format(expiring),
+      description: 'Priorize na montagem das cestas',
+      icon: ClockIcon,
+      gradient: 'from-amber-400 to-orange-500',
+    },
+  ]
+
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Dashboard</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-lg shadow-md">
-          <h3 className="text-sm font-medium text-gray-500">Total de itens em estoque</h3>
-          <p className="text-3xl font-bold">{totalItems}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-md">
-          <h3 className="text-sm font-medium text-gray-500">Cestas montadas no mês</h3>
-          <p className="text-3xl font-bold">{totalBaskets}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-md">
-          <h3 className="text-sm font-medium text-gray-500">Itens vencidos / vencendo</h3>
-          <p className="text-xl font-bold text-red-600">{expired}</p>
-          <p className="text-xl font-bold text-yellow-600">{expiring}</p>
-        </div>
+    <div className="space-y-8">
+      <div>
+        <p className="text-xs uppercase tracking-[0.3em] text-primary">Visao geral</p>
+        <h2 className="mt-2 text-3xl font-semibold text-slate-900">Dashboard</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Monitore indicadores-chave e tenha clareza sobre doacoes, estoques e itens criticos.
+        </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white p-4 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold mb-2">Últimas doações</h3>
-          <ul className="divide-y divide-gray-200">
-            {donations && donations.length > 0 ? (
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {highlightCards.map((card) => {
+          const Icon = card.icon
+          return (
+            <div
+              key={card.title}
+              className="rounded-3xl border border-white/70 bg-white/80 p-4 shadow-soft backdrop-blur"
+            >
+              <div className={`inline-flex rounded-2xl bg-gradient-to-r ${card.gradient} p-2 text-white`}>
+                <Icon className="h-6 w-6" aria-hidden />
+              </div>
+              <p className="mt-4 text-sm text-slate-500">{card.title}</p>
+              <p className="text-3xl font-semibold text-slate-900">{card.value}</p>
+              <p className="mt-1 text-xs text-slate-500">{card.description}</p>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section className="rounded-3xl border border-slate-100 bg-white/80 p-6 shadow-soft backdrop-blur">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Ultimas doacoes</h3>
+              <p className="text-sm text-slate-500">Acompanhamento em tempo real dos últimos registros.</p>
+            </div>
+            <Link
+              href="/doacoes"
+              className="inline-flex items-center rounded-full border border-primary/30 px-4 py-2 text-xs font-semibold text-primary transition hover:border-primary hover:bg-primary/5"
+            >
+              Ver doacoes
+            </Link>
+          </div>
+          <ul className="mt-4 divide-y divide-slate-100">
+            {donations.length > 0 ? (
               donations.map((donation) => (
-                <li key={donation.id} className="py-2">
-                  <p className="font-medium">{donation.donor_name || 'Anônimo'}</p>
-                  <p className="text-sm text-gray-500">{new Date(donation.donated_at).toLocaleDateString()}</p>
+                <li
+                  key={donation.id}
+                  className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <p className="font-medium text-slate-800">{donation.donor_name || 'Anonimo'}</p>
+                    <p className="text-xs text-slate-500">
+                      Recebido em {formatDate(donation.donated_at)}
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold text-primary">
+                    #{donation.id}
+                  </span>
                 </li>
               ))
             ) : (
-              <li className="py-2 text-gray-500">Nenhuma doação registrada.</li>
+              <li className="py-6 text-center text-sm text-slate-500">
+                Nenhuma doacao registrada recentemente.
+              </li>
             )}
           </ul>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold mb-2">Top 5 alimentos críticos</h3>
-          <ul className="divide-y divide-gray-200">
+        </section>
+
+        <section className="rounded-3xl border border-slate-100 bg-white/80 p-6 shadow-soft backdrop-blur">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Itens criticos</h3>
+              <p className="text-sm text-slate-500">Priorize reabastecimento ou uso imediato.</p>
+            </div>
+            <span className="inline-flex rounded-full bg-amber-100 px-4 py-1 text-xs font-semibold text-amber-700">
+              {criticalFoods.length} itens
+            </span>
+          </div>
+          <div className="mt-4 space-y-4">
             {criticalFoods.length > 0 ? (
               criticalFoods.map((food) => (
-                <li key={food.name} className="py-2 flex justify-between">
-                  <span>{food.name}</span>
-                  <span className="font-medium">{food.total}</span>
-                </li>
+                <div
+                  key={food.name}
+                  className="rounded-2xl border border-slate-100 p-4 shadow-sm"
+                >
+                  <div className="flex items-center justify-between text-sm">
+                    <div>
+                      <p className="font-semibold text-slate-800">{food.name}</p>
+                      {food.nearestExpiry && (
+                        <p className="text-xs text-slate-500">
+                          Vencimento mais proximo: {formatDate(food.nearestExpiry)}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-sm font-semibold text-primary">{food.total} unid.</span>
+                  </div>
+                  <div className="mt-3 h-2 w-full rounded-full bg-slate-100">
+                    <div
+                      className="h-2 rounded-full bg-gradient-to-r from-primary to-secondary"
+                      style={{
+                        width: `${Math.min((food.total / (criticalFoods[0]?.total || 1)) * 100, 100)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
               ))
             ) : (
-              <li className="py-2 text-gray-500">Nenhum item crítico.</li>
+              <p className="text-sm text-slate-500">Nenhum item critico encontrado.</p>
             )}
-          </ul>
-        </div>
+          </div>
+        </section>
       </div>
     </div>
   )
